@@ -1,0 +1,80 @@
+MVI D,00H
+MVI A,0DH 
+SIM
+MVI A,00H 			;arxikopoihsh kataxwrhtwn gia metrhsh
+MVI E,00H
+CMA	   			;sumplirwsh tou A gia swsth apeikonish
+STA 3000H
+LOOP1:	
+		LDA 2000H 	;des thn eisodo
+		MVI B,80H 	;sigkrish me 1000 0000
+		ANA B     	;an to apotelesma 0,tote to MSB einai 0
+		JZ EN_IN  	;phgaine na energopoihseis tis diakopes 
+		JNZ DI_IN 	;alliws apenergopoihse tes	
+INC_COUNTER:	
+		DI 		;gia na apofugw anepithymhta apotelesmata 
+		INR E 		;logw tou oti h routina diakophs peirazei tous A,E
+		MOV A,E 	;oso gnt h metrhsh oi diakopes apernergopoiountai
+		CMA		;kai energopoiountai sto telos ths routinas
+		STA 3000H 	;h apeikonish tou apotelesmatos tha ginei sthn epomenh metrhsh
+		
+		ANI 0FH	;an o A ginei F0H
+		CPI 00H
+		JZ RST_A_CNTR ;kane reset ta 4 LSB
+		MOV A,E
+		CMA
+		ANI F0H	;an o A ginei 0F
+		CPI 00H
+		JZ RST_INT_CNTR ; kane reset ta 4 MSB
+		MOV A,E
+		CMA
+		CPI 00H	;an o A ginei 00
+		JNZ OUTL		
+		CMA		;kanton reset sto FF
+		EI
+		RET
+RST_A_CNTR:			;kanei reset ta 4 LSB ths metrhshs(xronometro)
+		MOV A,E	;metaferw thn pragmatikh metrhsh ston A
+		ADI F0H	
+		MOV E,A
+		RET
+RST_INT_CNTR:			;kanei reset ta 4 MSB ths metrhshs(diakopes)
+		MOV A,E
+		ADI 0FH
+		MOV E,A
+		RET
+OUTL:	
+		STA 3000H
+		RET		
+		
+EN_IN:				;energopoihsh diakopwn
+		EI
+		CALL INC_COUNTER
+		MVI B,00H 	;thetw swstes times gia thn kathysterh tou DELB
+		MVI C,64H
+		CALL DELB
+		JMP LOOP1
+DI_IN:				;apenergopoihsh diakopwn
+		DI
+		CALL INC_COUNTER
+		MVI B,00H 
+		MVI C,64H
+		CALL DELB
+		JMP LOOP1	
+INTR_ROUTINE:	
+		MOV A,D	;xrisimopoioume ton D sa shmaia gia ta interrupts
+		CPI 00H	;sygkrinw me to 0
+		PUSH PSW	;swnw thn katastash tou A
+		JNZ N_COUNT	;an dn einai 0 allazw to flag xwris na auxisw to metrhth	
+		MOV A,E	;alithinh morfh metrhshs ston A gia leitourgikothta
+		ADI 10H	;prosthetw to byte 10 gia na apeikonistei sta MSB h epipleon diakoph	
+		MOV E,A	;alithinh morfh metrhshs ston E
+N_COUNT:
+		POP PSW	;epanaferw ton A
+		XRI 01H	;allazw to LSB
+		MOV D,A	;to apothikeuw sto flag
+		CMA		;sumplirwnw ton A gia swsth apeikonish
+		EI
+		RET
+
+END
