@@ -1,0 +1,53 @@
+FLASH:
+	LDA 2000H 		;Read input value
+	MOV D,A		;Backup A on D
+	ANI 0FH		;Isolate 4 LSB
+	MOV E,A		;Save x on E's LSB
+	MOV A,D
+	ANI F0H		;Isolate 4 MSB
+	RLC
+	RLC
+	RLC
+	RLC	
+	MOV D,A		;Save y on D's LSB
+	MVI H,00H		;Counter for (1 + y) loops
+	MOV A,E
+	CPI 00H		;Check if x = 0000
+	MVI A,01H		;Make A = 1 + x = 1 (for FLASH_2 Use only)
+	JZ FLASH_2		;If x = 0000, jump with A = 1
+	SUB A			;Else, go on and A=0
+X_CONV:
+	INR A			;A++
+	CMP E			;If A < x
+	JNZ X_CONV		;Then go to next loop
+	INR A			;Else, go on with A = 1 + x
+FLASH_2:
+	MOV B,A		;Save 1 + x to B
+FLASH_3:
+	INR H			;Initially, H = 0, where H counter to 1+y	
+	CALL ONN		;Go to ONN
+	CALL WAIT		;Wait 100ms * (1 + x)
+	CALL OFF		;Go to OFF
+	CMA			;Set A to 0
+	CALL WAIT		;Wait 100ms * (1 + x)
+	MOV A,H		;Set counter H on A
+	CMP D			;Check if counter H < 1 + y
+	JC FLASH_3		;If yes, repeat
+	JMP ENDD		;Else, end
+
+ONN: 
+	MVI A,00H
+	STA 3000H
+	RET
+OFF:
+	MVI A,FFH
+	STA 3000H
+	RET
+WAIT:				;DELB times 100 * (1 + x)
+	INR A			;Initially, A = 0, where A counter to 100
+	CALL DELB		;Wait (1 + x)ms
+	CPI 65H		;Check if A < 101
+	JC WAIT		;If yes repeat
+	RET			;Else return
+ENDD:	
+	END
