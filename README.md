@@ -1,2 +1,2 @@
-1. Clock implementation with variable sized delays and conditional operation
+1. Clock implementation with variable sized delays and dynamic operation
 2. 
